@@ -1,0 +1,52 @@
+.cntr{
+    position: absolute !important;
+    top:50% !important;
+    left:50% !important;
+    transform:translate(-50%, -50%) !important;
+}
+
+.tcntr{
+    text-align: center !important;
+}
+
+.cstl{/*corner sharp top left*/
+    border-top-left-radius: 0px !important;
+}
+.cstr{/*corner sharp top right*/
+    border-top-right-radius: 0px !important;
+}
+.csbl{/*corner sharp bottom left*/
+    border-bottom-left-radius: 0px !important;
+}
+.csbr{/*corner sharp bottom right*/
+    border-bottom-right-radius: 0px !important;
+}
+.cs{/*sharp corners*/
+    border-radius: 0px !important;
+}
+
+.rx-drug >.twitter-typeahead{
+    display: block !important;
+}
+
+.rx-regimen{
+    display: flex !important;
+}
+
+.patient-rxs > button + button, .patient-rxs > div + button{
+    margin: 6px;
+}
+
+.patient-rxs{
+    max-height: inherit;
+    position: absolute;
+    width: 100%;
+}
+
+.pos-abs{
+    position: absolute !important;
+}
+
+.rxs > div + div{
+    margin: 3px;
+}

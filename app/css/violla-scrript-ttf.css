@@ -1,0 +1,8 @@
+@font-face {
+    font-family: viollaScript;
+    src: url("../asset/Violla.otf");
+}
+
+.violla {
+    font-family: viollaScript !important;
+}
