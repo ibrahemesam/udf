@@ -1,5 +1,4 @@
-range = (start, stop, step = 1) =>
-  Array(Math.ceil((stop - start) / step)).fill(start).map((x, y) => x + y * step)
+
 SQLiteServer = {
     connect: async function SQLiteServerConnect(ip, port, secret){
         var ws = await (new Promise((resolve, decline)=>{
