@@ -4,8 +4,9 @@ import threading, asyncio, websockets, time, socket, sqlite3
 
 
 class Server:
-    def __init__(self, db_file, port=None, secret='null'):
-        self.db_file, self.secret, self.port = db_file, secret, port
+    def __init__(self, db_file, port=None, secret='null', pong="SQLiteServer"):
+        if secret == 'ping': raise Exception('secret can NOT be "ping"')
+        self.db_file, self.secret, self.port, self.pong = db_file, secret, port, pong
         threading.Thread(target=self.start, args=()).start()
 
     def start(self):
@@ -18,17 +19,21 @@ class Server:
         async_loop.run_forever()
 
     async def ws_hellow(self, websocket, path):
-        # authentication
-        # TODO: use better authentication method to eliminate DoS attack
         try: 
-            auth = await websocket.recv()
+            first_msg = await websocket.recv()
         except:
             self.goodbye(websocket)
             return
+        # if first_msg is ping, then pong
+        if first_msg == 'ping':
+            await websocket.send(self.pong)
+            return
+        else: auth = first_msg
+        # authentication
+        # TODO [Security]: use better authentication method to eliminate DoS attack
         if auth != self.secret:
-            try: await websocket.close('fuck you!')
-            except: pass
-            print('auth:', auth)
+            await websocket.send('fuck you!')
+            print('auth_failed:', auth)
             return
             # raise Exception("UnAuthorized client")
         while True:
@@ -81,6 +86,7 @@ class Server:
         if exception: print(exception)
         print('goodbye <3')
         return
+    
 
 
 
