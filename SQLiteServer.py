@@ -60,7 +60,8 @@ class Server:
 
                         # add the rest of rows
                         for row in cursor:
-                            for col in cols: result[col].append(row[col])
+                            row = tuple(row)
+                            for idx, col in enumerate(cols): result[col].append(row[idx])
 
                         # encode && send the result
                         result = str(result)
