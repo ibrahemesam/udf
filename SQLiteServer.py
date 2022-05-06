@@ -1,4 +1,17 @@
+from email.policy import default
 import threading, asyncio, websockets, time, socket, sqlite3
+
+def get_private_ip():
+    s = socket.socket(socket.AF_INET, socket.SOCK_DGRAM)
+    s.connect(("8.8.8.8", 80))
+    ip = s.getsockname()[0]
+    s.close()
+    return ip
+
+def get_default_local_ip():
+    return socket.gethostbyname(socket.gethostname())
+
+default_local_ip = get_default_local_ip()
 
 class Server:
     def __init__(self, db_file, port=None, secret='null', pong="SQLiteServer"):
@@ -11,7 +24,7 @@ class Server:
         self.db.row_factory = sqlite3.Row
         async_loop = asyncio.new_event_loop()
         asyncio.set_event_loop(async_loop)
-        server = websockets.serve(self.ws_hellow, "127.0.0.1", self.port)
+        server = websockets.serve(self.ws_hellow, default_local_ip, self.port)
         asyncio.ensure_future(server)
         async_loop.run_forever()
 
@@ -95,6 +108,7 @@ class Server:
         ###
         def __init__(self, ip, port, secret):
             from websocket import create_connection
+            if ip == get_private_ip(): ip = default_local_ip
             self.ws = create_connection(f"ws://{ip}:{port}")
             # authentication
             self.ws.send(secret)
