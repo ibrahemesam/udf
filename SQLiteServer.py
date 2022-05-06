@@ -1,8 +1,5 @@
 import threading, asyncio, websockets, time, socket, sqlite3
 
-
-
-
 class Server:
     def __init__(self, db_file, port=None, secret='null', pong="SQLiteServer"):
         if secret == 'ping': raise Exception('secret can NOT be "ping"')
@@ -127,11 +124,6 @@ class Server:
                     , args=()).start()
             
 
-
-    
-
-
-
 if __name__ == '__main__':
     Server('tst.db', 3425)
     import time
@@ -146,5 +138,3 @@ if __name__ == '__main__':
         except Exception as e:
             print(e)
 
-#TODO: make JS interface
-#TODO: make PY interface
