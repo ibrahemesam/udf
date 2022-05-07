@@ -102,6 +102,9 @@ class Server:
         print('goodbye <3')
         return
 
+    def get_url(self):
+        return [default_local_ip, self.port]
+
     class connect:
         ###
         # client reqires: pip install websocket-client
