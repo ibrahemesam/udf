@@ -1,12 +1,4 @@
 
-# This must be the launcher script: [ex: py_debug.py __file_to_run__.py]
-"""
-#!/usr/bin/python
-import sys; sys.path.append('/home/ibrahem/Desktop/Code/Projects/udf') #import my UDF
-from IDE import py_debug
-py_debug()
-"""
-
 def get_free_port(return_socket=False):
     import socket
     for port in range(1025, 65536):  # check for all available ports
@@ -115,4 +107,6 @@ def py_debug(): # run this py file (arg[0]) in new subprocess || send its path t
         except KeyboardInterrupt:
             pass
 
-
+if __name__ == "__main__":
+    # This must be the launcher script: [ex: py_debug.py __file_to_run__.py]
+    py_debug()
