@@ -1,0 +1,5 @@
+test.py
+test*.py
+tst.db
+__pycache__/
+.vscode/
