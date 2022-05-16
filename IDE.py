@@ -1,47 +1,118 @@
-class IDE(QWidget):
-    def __init__(self):
-        # todo: override os.exit to execute some functions before it && and save inp_exec (encapsule IDE class)
-        super().__init__()
-        from PyQt5 import uic
-        uic.loadUi(f"{g.mPath}/app/IDE.ui", self)
-        self.btn_exec.clicked.connect(lambda: self.test_exec(self.inp_exec.toPlainText().strip().replace('\t', '    ')))
-        shortcut('F4', self, lambda: self.test_exec(self.inp_exec.toPlainText().strip().replace('\t', '    ')), 0)
-        shortcut('F5', self, lambda: self.test_exec(open('dev-exec.py').read().replace('\t', '    ')), 0)
-        global cout
-        def cout(st):
-            self.tabs.setCurrentIndex(2)
-            self.tabs_tests.setCurrentIndex(1)
-            self.inp_exec_out.setPlainText(str(st))
-        try:
-            self.inp_exec.setPlainText(my.fileRead('Data/exec.py'))
-            self.inp_exec_out.setPlainText(my.fileRead('Data/exec_out.py'))
-        except: pass
-        import syntax
-        self.inp_exec.setStyleSheet("""QPlainTextEdit{
-                font-family:'Consolas'; 
-                color: #ccc; 
-                background-color: #2b2b2b;}""")
-        self.highlight1 = syntax.PythonHighlighter(self.inp_exec.document())
-        self.inp_exec_out.setStyleSheet("""QPlainTextEdit{
-                font-family:'Consolas'; 
-                color: #ccc; 
-                background-color: #2b2b2b;}""")
-        self.highlight2 = syntax.PythonHighlighter(self.inp_exec_out.document())
-        #todo setInterval to save test code and output to the db file
-        def saveTestCode():
-            global exec_code; exec_code = self.inp_exec.toPlainText()
-            while True:
-                if self.inp_exec.toPlainText() != exec_code:
-                    my.fileWrite('Data/exec.py', self.inp_exec.toPlainText())
-                    my.fileWrite('Data/exec_out.py', self.inp_exec_out.toPlainText())
-                    exec_code = self.inp_exec.toPlainText()
-                wait(5000)
-        qthread_task(lambda: saveTestCode()).start()
 
-    def test_exec(self, code):
-        try: exec(code)
+# This must be the launcher script: [ex: py_debug.py __file_to_run__.py]
+"""
+#!/usr/bin/python
+import sys; sys.path.append('/home/ibrahem/Desktop/Code/Projects/udf') #import my UDF
+from IDE import py_debug
+py_debug()
+"""
+
+def get_free_port(return_socket=False):
+    import socket
+    for port in range(1025, 65536):  # check for all available ports
+        try:
+            serv = socket.socket()  # create a new socket
+            serv.bind(('0.0.0.0', port))  # bind socket with address
+            if return_socket: return serv, port
+            serv.close()  # close connection
+            return port
+        except: continue
+
+def init_remote_debugger(secret="None"):
+    import socket, traceback, time
+    ## secret is a way of authentication to prevent executing un-authorized code
+    # create a socket server with free port
+    soc, port = get_free_port(return_socket=True)
+    print(f'[DEBUGGER]: running on port {port}') # & secret is: {secret}') 
+    # put socket into listening mode  
+    soc.listen(5)
+    # loop
+    while True:
+        # Establish connection with client.
+        try:
+            client, addr = soc.accept() 
+        except KeyboardInterrupt:
+            return
+        # old authentication
+        # client_auth = client.recv(4).decode()
+        # if client_auth != secret:
+        #     # print('client_auth:', client_auth)
+        #     client.send('Fuck U'.encode())
+        #     client.close()
+        #     continue
+        # print(client_auth)
+
+        # authentication
+        if addr[0] != socket.gethostbyname('localhost'):
+            client.sendall('Fuck U'.encode())
+            client.close()
+            continue
+
+        # get python_file_path to execute
+        py_file_path = client.recv(1024).decode()
+        with open(py_file_path, 'r') as py_file_path:
+            code = py_file_path.read()
+
+        # execute the file here and get result if possible
+        try:
+            try:
+                result = str([eval(code)])[1:-1]
+            except SyntaxError:
+                result = "Null"
+                exec(code)
         except:
-            #try: g.msg(str(sys.exc_info()[1]))
-            try: g.msg(traceback.format_exc())
-            except: g.msg("Can't get the error ]:")
+            result = "[ERROR]\n"+traceback.format_exc()
+
+        # def break_loop(): return
+        if f'[break_loop_{port}]' in code:
+            client.sendall("Bye bye".encode())
+            client.close()
+            return
+        else:
+            # send the result of execution to the client
+            client.sendall(result.encode())
+            # Close the connection with the client
+            client.close()
+
+
+def py_debug(): # run this py file (arg[0]) in new subprocess || send its path to IDE socket erver
+    from subprocess import Popen as po
+    import sys, traceback, time, re, os
+
+    py_file_path_with_args = sys.argv[1:]
+    try:
+        py_file_path = os.path.abspath(py_file_path_with_args[0])
+    except IndexError:
+        exit(0)
+    with open(py_file_path, 'r') as f:
+        code = f.read()
+
+
+    debug_server_info_pattern = re.compile(r'\[DEBUG\]\[port:(.*)\]') #;secret:(.*)\]')
+    debug_server_info = debug_server_info_pattern.search(code)
+    if debug_server_info:
+        # get server port and secret
+        server_port = int(debug_server_info.group(1))
+        # server_secret = debug_server_info.group(2)
+        # init socket client
+        import socket            
+        s = socket.socket()   
+        # connect to server     
+        s.connect(('127.0.0.1', server_port))
+        # authentication
+        # s.sendall(server_secret.encode())
+        # send python file path
+        s.sendall(py_file_path.encode())
+        # recv execution result
+        result = s.recv(3500).decode()    
+        print("[result]:", result)
+        # close connection
+        s.close() 
+    else:
+        # server port and|or server secret does not exist in the py_file; so, execute it normally
+        try:
+            po(['/home/ibrahem/Desktop/Code/Runtimes/miniconda3/bin/python']+py_file_path_with_args).wait()
+        except KeyboardInterrupt:
+            pass
+
 
