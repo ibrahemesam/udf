@@ -1,14 +1,5 @@
 
 
-// SQL = {
-//     a:Date.now()
-// }
-
-
-
-
-
-
 
 function init_ws(){
 

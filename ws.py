@@ -80,7 +80,8 @@ RuntimeError: This event loop is already running
         self.send_lock.release()
 
     def onClientClose(self, exception):
-        client.clients.remove(self)
+        try: client.clients.remove(self)
+        except ValueError: pass
         try: self.client.onClientClose(exception)
         except Exception as e:
             if str(e) == "'client' object has no attribute 'onClientClose'": pass
@@ -109,7 +110,7 @@ async def ws_hellow(websocket, path):
     await recv(_client)
 
 def init_server(port=5678, child_class=None):
-    server = websockets.serve(ws_hellow, "127.0.0.1", port)
+    server = websockets.serve(ws_hellow, port=port)
     asyncio.ensure_future(server)
     asyncio.main_loop = asyncio.get_event_loop()
     if child_class: client.child_class = child_class

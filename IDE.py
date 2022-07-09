@@ -36,6 +36,8 @@ def init_remote_debugger(secret="None"):
 
         # authentication
         if addr[0] != socket.gethostbyname('localhost'):
+            # IDE need Authentication because it executes remote code;
+            #     if that code is not authorized, it could be malware!
             client.sendall('Fuck U'.encode())
             client.close()
             continue

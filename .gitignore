@@ -3,3 +3,4 @@ test*.py
 tst.db
 __pycache__/
 .vscode/
+app/asset/chromium/*

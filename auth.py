@@ -6,6 +6,7 @@ from Com import *
 from PyQt5 import QtWidgets, QtCore, uic
 import requests, os, pycrypt as crypt
 import datetime
+
 def getOnlineUTCTime():
     _time = requests.get('https://just-the-time.appspot.com/').text.strip()
     return datetime.datetime.strptime(_time, '%Y-%m-%d %H:%M:%S')
@@ -165,6 +166,54 @@ class license(QtWidgets.QWidget):
         if license.license_checked:
             if license.license_ok: code()
         elif g.license_ok_txt_exists: code()
+
+
+
+class secure_url:
+    # dns-lockup:-
+    # pip install dnspython [NB: dnspython ignores hosts file, so: its result is CORRECT and TRUE (NOT FAKED)]
+    # ref: https://www.geeksforgeeks.org/network-programming-in-python-dns-look-up/
+    def __init__(self) -> None:
+        try:
+            self.dns_resolver = resolver.Resolver()
+        except NameError:
+            from dns import resolver
+            self.dns_resolver = resolver.Resolver()
+        except ModuleNotFoundError:
+            raise ModuleNotFoundError('Please: pip install dnspython')
+        self.dns_resolver.nameservers = ['8.8.8.8', '8.8.4.4']
+
+    def __call__(self, url):
+        # input: https://example.com/alfa
+        # output: https://156.253.35.55/alfa
+        # first get the true server ip using DNS query
+        protocol = 'http://'
+        if url.startswith('http://'):
+            host = url[7:]
+        elif url.startswith('https://'):
+            host = url[8:]
+            protocol = 'https://'
+        if '/' in host:
+            url_rest = host
+            host = host.split('/')[0]
+            url_rest = url_rest[len(host):]
+        else: url_rest = ''
+        # query DNS server
+        answers = self.dns_resolver.query(host) # stackexchange.com
+        # IPs = []
+        for rdata in answers:
+            ip = rdata.address
+            break
+        return f'{protocol}{host}{url_rest}'
+
+
+
+
+
+        
+
+        
+
 
 
 #todo: add ui section that display license status [ie: prochased date && license type && time left]

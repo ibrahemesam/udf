@@ -11,7 +11,9 @@ from selenium.webdriver.chrome.options import Options
 import time, os, g
 
 userAgent = "Mozilla/5.0 (X11; Linux x86_64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/97.0.4692.99 Safari/537.36"
-
+__path = os.path.dirname(os.path.abspath(__file__))
+def get_path(path):
+    return os.path.join(__path, os.path.relpath(path))
 def unsafe(_def, args=(), s_sleep=1):
     while True:
         try:
@@ -36,7 +38,7 @@ class Driver:
     timeout = selenium.common.exceptions.TimeoutException
     chrome_bin = None
     chrome_driver = None
-    def __init__(self, incognito=False, profile=None, full_screen=False, disable_web_security=False, headless=False, chrome_app_url=None,  userAgent=userAgent, oem_manifest=None) -> None:
+    def __init__(self, incognito=False, profile=None, full_screen=False, disable_web_security=False, headless=False, chrome_app_url=None,  userAgent=userAgent, oem_manifest=None, grant_medial_access=False) -> None:
         options = webdriver.ChromeOptions()
         if incognito:
             options.add_argument("--incognito")
@@ -48,7 +50,7 @@ class Driver:
                 #TODO: pass
                 pass
             else: #if os.name=="posix" (ie: linux)
-                options.add_argument('user-data-dir=./data/chrome_profile')
+                options.add_argument(f'user-data-dir={get_path("./data/chrome_profile")}')
                 pass
         if headless: options.add_argument("--headless")
         if chrome_app_url:
@@ -66,6 +68,8 @@ class Driver:
             options.add_argument("--allow-file-access-from-files")
             options.add_argument("--disable-login-animations")
         if full_screen: options.add_argument("--start-maximized")
+        if grant_medial_access:
+            options.add_argument("--use-fake-ui-for-media-stream=1")
         options.add_experimental_option('excludeSwitches', ['load-extension', 'enable-automation'])
         options.add_experimental_option('useAutomationExtension', False)
         options.add_argument(f'user-agent={userAgent}')
@@ -91,11 +95,11 @@ class Driver:
     def get_chrome_bin():
         if not Driver.chrome_driver:
             if os.name == "nt": #if windows
-                Driver.chrome_bin = './app/asset/Chrome/Application/chrome.exe'
-                Driver.chrome_driver ='./app/asset/Chrome/Application/chromedriver.exe'
+                Driver.chrome_bin = get_path('./app/asset/Chrome/Application/chrome.exe')
+                Driver.chrome_driver = get_path('./app/asset/Chrome/Application/chromedriver.exe')
             else: #if os.name=="posix" (ie: linux)
-                Driver.chrome_bin = './app/asset/chromium/chrome'
-                Driver.chrome_driver = './app/asset/chromium/chromedriver'
+                Driver.chrome_bin = get_path('./app/asset/chromium/chrome')
+                Driver.chrome_driver = get_path('./app/asset/chromium/chromedriver')
         return [Driver.chrome_bin, Driver.chrome_driver]
 
     @staticmethod
@@ -121,7 +125,7 @@ class Whatsapp:
     })();
     """
     whatsapp_web = 'https://web.whatsapp.com/'
-    def __init__(self, profile="./data/browser_profile", headless=False, userAgent=userAgent) -> None:
+    def __init__(self, profile=get_path("./data/browser_profile"), headless=False, userAgent=userAgent) -> None:
         g.wa = self
         self.driver = Driver(profile=profile, headless=headless, userAgent=userAgent, chrome_app_url=self.whatsapp_web).driver
         self.js = self.driver.js
