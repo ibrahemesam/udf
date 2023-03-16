@@ -39,9 +39,9 @@ def p(*args, d=None):
         if not g.debug[d]: return
     _ = ' '.join([str(a) for a in args])
     print(_)
-    if g.debug['log']:
-        try: g.ui.exec.emit(lambda: multiLambda(lambda: logDb.execute(f'insert into log values (?, ?)', (_, '')), lambda: logDb.commit()))
-        except: pass
+    # if g.debug['log']:
+    #     try: g.ui.exec.emit(lambda: multiLambda(lambda: logDb.execute(f'insert into log values (?, ?)', (_, '')), lambda: logDb.commit()))
+    #     except: pass
     return _
 def h(): p("Here")
 def t(v): return type(v)
@@ -372,3 +372,113 @@ def hhmmss(ms):
     s, _ = divmod(r, 1000)
     return ("%d:%02d:%02d" % (h,m,s)) if h else ("%d:%02d" % (m,s))
 
+def check_pid():
+    ########## Do Not run app twice in the same time ##########
+    g.PID = os.getpid()
+    _ = 'pid.txt'
+    if os.path.exists(_):
+        last_pid = fileRead(_)
+        if last_pid != str(g.PID):
+            try:
+                if psutil.Process(int(last_pid)).cmdline() == psutil.Process(g.PID).cmdline():
+                    try: g.gif_process.terminate()
+                    except: pass
+                    os._exit(0)
+            except: pass
+        del last_pid
+    fileWrite(os.path.abspath(_), str(g.PID))
+    ###########################################################
+
+class bcolors:
+    HEADER = '\033[95m'
+    OKBLUE = '\033[94m'
+    OKCYAN = '\033[96m'
+    RED = '\033[91m'
+    OKGREEN = '\033[92m'
+    WARNING = '\033[93m'
+    FAIL = '\033[91m'
+    ENDC = '\033[0m'
+    BOLD = '\033[1m'
+    UNDERLINE = '\033[4m'
+
+class utils:
+    backslash_char = "\\"
+    new_line_char = "\n"
+
+    @staticmethod
+    def shell():
+        import inspect
+        import readline
+        readline.parse_and_bind("tab: complete")
+        history_of_inputs = []
+        def complete(text,state):
+            results = [x for x in history_of_inputs if x.startswith(text)] + [None]
+            return results[state]
+
+        readline.set_completer(complete)
+        self = tempClass()
+        calling_scope = inspect.stack()[1][0]
+        calling_scope_globals = eval('globals()', calling_scope.f_globals, calling_scope.f_locals)
+        self.__shell_old_print = eval('print', calling_scope.f_globals, calling_scope.f_locals)
+        self.__shell_last_printed = ''
+        self.__shell_first_print = True
+        self.write_S = False
+        def _print(s='', *args, **kwargs):
+            self.__shell_old_print('', end='\r')
+            if self.__shell_first_print: self.__shell_first_print = False
+            else: self.__shell_old_print(self.__shell_last_printed, end='\r')
+            self.__shell_old_print(s, *args, **kwargs)
+            if self.write_S: self.__shell_old_print(f'{bcolors.HEADER}{bcolors.BOLD}$ {bcolors.ENDC}', end='')
+            self.__shell_last_printed = s
+
+        calling_scope_globals['print'] = _print
+        try:
+            print(f"\r{bcolors.OKGREEN}{bcolors.BOLD}# Starting Shell #{bcolors.ENDC}")
+            line_not_complete_indicators = [':', ',', '(', '[', '\\']
+            while True:
+                self.write_S = True
+                try:
+                    _input = ''
+                    while True:
+                        _input += '\n'+input(f'{bcolors.HEADER}{bcolors.BOLD}$ {bcolors.ENDC}')
+                        if (_input+' ').rstrip()[-1] in line_not_complete_indicators:
+                            continue
+                        else: break
+                    history_of_inputs.append(_input[1:])
+                except KeyboardInterrupt:
+                    print()
+                    continue
+                except EOFError: # Ctrl+D
+                    print()
+                    print(f"{bcolors.OKCYAN}{bcolors.BOLD}# Quitting Shell #{bcolors.ENDC}")
+                    return
+                except:
+                    print('', end='\r')
+                    continue
+                self.write_S = False
+                if _input in ['quit()', 'exit()']:
+                    print(f"{bcolors.OKCYAN}{bcolors.BOLD}# Quitting Shell #{bcolors.ENDC}")
+                    break
+                try:
+                    try:
+                        _return = eval(_input, calling_scope.f_globals, calling_scope.f_locals)
+                        if _return is not None: print(f'{bcolors.OKGREEN}{bcolors.BOLD}>>{bcolors.ENDC} {_return}')
+                    except SystemExit:
+                        raise SystemExit
+                    except: exec(_input, calling_scope.f_globals, calling_scope.f_locals)
+                    
+                except SystemExit:
+                    raise SystemExit
+                except:
+                    exc_info = sys.exc_info()
+                    print(f'{bcolors.FAIL}Traceback (most recent call last):{bcolors.ENDC}')
+                    for trace_line in traceback.extract_tb(exc_info[2]).format()[1:]:
+                        print(f"{bcolors.FAIL}{trace_line.rstrip()}{bcolors.ENDC}")
+                    print(f'{bcolors.FAIL}{exc_info[0].__name__}: {exc_info[1]}{bcolors.ENDC}')
+            calling_scope_globals['print'] = self.__shell_old_print
+        except KeyboardInterrupt:
+            print(f'\r{bcolors.RED}<\KeyboardInterrupt/>{bcolors.ENDC}')
+            os._exit(0)
+        except SystemExit:
+            print(f"{bcolors.OKCYAN}{bcolors.BOLD}# Quitting Shell #{bcolors.ENDC}")
+            os._exit(0)

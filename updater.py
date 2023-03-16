@@ -2,6 +2,7 @@ import platform
 import zipfile
 import my; from my import *
 import Com; from Com import *
+#TODO: make filesystem transaction procedure while updating
 class updater:
   def __init__(self, project_dir, github_repo, def_to_output_progress=emptyDef):
     #note: github_repo is in format of "username/repo_name"

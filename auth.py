@@ -6,6 +6,11 @@ from Com import *
 from PyQt5 import QtWidgets, QtCore, uic
 import requests, os, pycrypt as crypt
 import datetime
+import re
+import subprocess as sp
+import os, json
+if os.name == 'nt':
+    import wmi # pip install wmi pywin32
 
 def getOnlineUTCTime():
     _time = requests.get('https://just-the-time.appspot.com/').text.strip()
@@ -104,7 +109,7 @@ class license(QtWidgets.QWidget):
 
     def checkLicence(self):
         my.p('checkLicence started')
-        hwid_dict = eval(crypt.HEX_crypt.decrypt(unsafe(lambda: requests.get(self.online_txt).text)))
+        hwid_dict = json.loads(crypt.HEX_crypt.decrypt(unsafe(lambda: requests.get(self.online_txt).text)))
         current_date = getOnlineUTCTime()
         for disk in self.disks:
             if disk in hwid_dict:
@@ -113,7 +118,7 @@ class license(QtWidgets.QWidget):
                 license.order_date = datetime.datetime.strptime(license_data['order_date'], '%Y-%m-%d %H:%M:%S')
                 license.license_type = license_data['license_type']
                 license.username = license_data['username']
-                if license.end_date - datetime.datetime.now() > datetime.timedelta(milliseconds=1):
+                if license.end_date - current_date > datetime.timedelta(milliseconds=1):
                     #license is valid
                     my.p('checkLicence done: True')
                     self.license_ok = license.license_ok = True
@@ -125,6 +130,7 @@ class license(QtWidgets.QWidget):
                     return
                 else:
                     #license is NOT valid
+                    self.fail_code()
                     break
 
         self.license_ok = license.license_ok = False
@@ -138,24 +144,12 @@ class license(QtWidgets.QWidget):
 
     def get_disks_serials(self):  # get list of serial numbers of connected HDDs & SSDs [as HWID obtainer]
         if os.name == 'nt':  # Windows
-            a = os.popen("wmic diskdrive get serialnumber").read().strip() \
-                .replace('SerialNumber', '').replace('\n\n', '\n').split('\n')
-            _ = []
-            for idx, i in enumerate(a):
-                i = i.replace(' ', '')
-                if i == '': continue
-                if '-' in i: i = i.split('-')[-1]
-                _.append(i)
-            return list(set(_))
+            return [
+                item.SerialNumber.strip() for item in wmi.WMI().query("SELECT SerialNumber FROM Win32_DiskDrive")
+            ]
         else:  # Linux
-            a = os.popen("lsblk --nodeps -no name,serial | grep sd").read().split('\n')
-            _ = []
-            for i in a:
-                if i == '':
-                    continue
-                else:
-                    _.append(i.split(' ')[-1])
-            return _
+            return re.findall('(.*)\\n', sp.check_output(('lsblk', '--nodeps', '-no', 'serial')).decode())
+            # return [r.group(1) for r in re.finditer(r' *([a-zA-Z0-9]*)\n', os.popen('lsblk --nodeps -no name,serial').read())]
 
     def realHwid2Shown(self, real_hwid): return real_hwid[::-1]
 
@@ -164,8 +158,10 @@ class license(QtWidgets.QWidget):
     @staticmethod
     def act(code):
         if license.license_checked:
-            if license.license_ok: code()
-        elif g.license_ok_txt_exists: code()
+            if license.license_ok:
+                return code()
+        elif g.license_ok_txt_exists:
+            return code()
 
 
 
@@ -175,12 +171,11 @@ class secure_url:
     # ref: https://www.geeksforgeeks.org/network-programming-in-python-dns-look-up/
     def __init__(self) -> None:
         try:
-            self.dns_resolver = resolver.Resolver()
-        except NameError:
             from dns import resolver
-            self.dns_resolver = resolver.Resolver()
         except ModuleNotFoundError:
             raise ModuleNotFoundError('Please: pip install dnspython')
+        self.dns_resolver = resolver.Resolver()
+        
         self.dns_resolver.nameservers = ['8.8.8.8', '8.8.4.4']
 
     def __call__(self, url):

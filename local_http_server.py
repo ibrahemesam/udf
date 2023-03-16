@@ -5,7 +5,7 @@ import sys#; sys.path.append('/home/ibrahem/Desktop/Code/Projects/OnTime Shop') 
 import mimetypes
 from threading import Thread
 
-def init_local_http(root=None, accept_outer_connection=False):
+def init_local_http(root=None, accept_outer_connection=False, port=None, pathes=[]):
     # root is: the root path directory that the server serves up.
     # accept_outer_connection is: whether you want to serve up
     #  connections comming from outside of 127.0.0.1
@@ -14,7 +14,7 @@ def init_local_http(root=None, accept_outer_connection=False):
         if not os.path.exists(root):
             raise FileNotFoundError('root directory was not found')
         root = os.path.relpath(root)
-        pathes = []
+        # pathes = []
         for path in sys.path:
             pathes.append(
                 os.path.join(path, root)
@@ -58,6 +58,12 @@ def init_local_http(root=None, accept_outer_connection=False):
     def launch_server(server):
         try: server.serve_forever()
         except: server.server_close()
+    if port is not None:
+        port = int(port)
+        server = HTTPServer(("", port), http_handler)
+        Thread(target=launch_server, args=([server])).start()
+        time.sleep(0.5) # wait for server to run
+        return port
     for port in range(1025, 65535):  # check for all available ports
         try:
             server = HTTPServer(("", port), http_handler)

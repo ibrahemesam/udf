@@ -27,6 +27,9 @@ class RSA_crypt:
         p = bytearray(string.encode())
         c = self.chiper.encrypt(p)
         return base64.b64encode(c).decode()
+        
+    def encryptBytes(self, byts):
+        return self.chiper.encrypt(byts)
 
     def decrypt(self, str_bs64): #decryptFromBase64Str
         c = base64.b64decode(str_bs64)
@@ -68,4 +71,12 @@ class HEX_crypt:
     def decrypt(string, number_of_decryptions=1):
         for i in range(number_of_decryptions):
             string = bytes.fromhex(string).decode()
+        return string
+        
+    @staticmethod
+    def decryptBytes(string, number_of_decryptions=1):
+        for i in range(number_of_decryptions):
+            string = bytes.fromhex(string)
+            try: string = string.decode()
+            except: break
         return string

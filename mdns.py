@@ -68,7 +68,7 @@ class mdns:
     def listen(self, onadd=None, onupdate=None, onremove=None):
         # listen for services
         # onadd , onupdate, onremove := def where events are catched & is called with: def(service_name, service_info)
-        if [onadd, onupdate, onremove] == [None, None, None]: return
+        if (onadd, onupdate, onremove) == (None, None, None): return
         if self.listening: raise Exception('already listening.')
         self.listening = True
         self.listener = {
@@ -99,14 +99,16 @@ class mdns:
         self.listening = False
         self.listener.zeroconf.close()
 
-    def __del__(self):
+    def close(self):
         # unregister published services
         for service_name in list(self.published_services.keys()):
-            self.zeroconf.unregister_service(published_services[service_name])
+            self.zeroconf.unregister_service(self.published_services[service_name])
             del self.published_services[service_name]
         self.zeroconf.close()
         # stop service listener
         if self.listening: self.unlisten()
+        
+    __del__ = close
 
     @staticmethod
     def clean_dict(_dict):
@@ -118,8 +120,6 @@ class mdns:
         return new_dict
 
 
-    
-        
 if __name__ == '__main__':
     # Testing this module
     print('setting listener')
