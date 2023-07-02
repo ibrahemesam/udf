@@ -65,7 +65,7 @@ class pyjs(Thread): # Python <==IPC==> NodeJS_Main :: python is the server
     def test():
         from orjson import loads, dumps
         ipc = pyjs(print, dumps, loads)
-        print(f'{ipc.port = }')
+        print(f'ipc.port = { ipc.port }')
         from time import sleep, time
         while 1:
             sleep(1)

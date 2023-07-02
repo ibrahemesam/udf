@@ -156,7 +156,7 @@ class Whatsapp:
             except TimeoutException:
                 not_whatsapp_user = self.driver.js(Whatsapp.not_whatsapp_user_js)
                 self.driver.find_element_by_xpath('//div[@role="dialog"]')
-                print(f'{not_whatsapp_user = }')
+                print(f'not_whatsapp_user = { not_whatsapp_user }')
                 if not_whatsapp_user: break
         if not_whatsapp_user:
             # close the "Phone number shared via url is invalid." dialog

@@ -537,7 +537,7 @@ if __name__ == '__main__':
     class client_ws:
         def welcome(self, msg):
             self.continue_job_in_asyncio(self.ping, msg)
-            
+
         async def ping(self, msg):
             c = self.Channel()
             print('client: ping sent to server')
@@ -547,7 +547,7 @@ if __name__ == '__main__':
             print('client: pong sent to server')
             c.send({'t': 'pong'})
             c.close()
-            
+
     a = WebsocketClient(f'localhost:{PORT}', ws_handler=client_ws)
             
             
