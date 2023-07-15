@@ -1,15 +1,19 @@
 
 from http.server import BaseHTTPRequestHandler, HTTPServer
+from os.path import join, dirname
 import os, time, urllib.parse
 import sys#; sys.path.append('/home/ibrahem/Desktop/Code/Projects/OnTime Shop') #import my UDF
 import mimetypes
 from threading import Thread
+
+DEFAULT_EXTRA_PATHES = [join(dirname(__file__), 'app')]
 
 def init_local_http(root=None, accept_outer_connection=False, port=None, pathes=[]):
     # root is: the root path directory that the server serves up.
     # accept_outer_connection is: whether you want to serve up
     #  connections comming from outside of 127.0.0.1
     #  ie: from other devices in local network or global one
+    pathes += DEFAULT_EXTRA_PATHES
     if root:
         if not os.path.exists(root):
             raise FileNotFoundError('root directory was not found')
