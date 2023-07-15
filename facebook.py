@@ -7,7 +7,9 @@ from requests import get as GET
 import requests
 
 FB_URL = 'https://m.facebook.com'
+# FB_MBASIC_URL = 'https://mbasic.facebook.com'
 IE6userAgent = 'Mozilla/4.0 (compatible; MSIE 6.0; Windows NT 5.0; WOW64; Trident/4.0; SLCC1)'
+# ChromeUserAgent = "Mozilla/5.0 (X11; Linux x86_64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/114.0.0.0 Safari/537.36"
 headers = { 'User-Agent': IE6userAgent, 'upgrade-insecure-requests': '1' }
 LOGIN_FORM_HTML_REGX = re_compile(r'<form(.*)</form>')
 LOGIN_FORM_ACTION_REGX = re_compile(r'action="([^< ]*)"')
@@ -37,18 +39,21 @@ DUMMY_FB_APP_LOGIN_URL = FB_URL + '/v2.11/dialog/oauth?' + urlencode({
 def login_fb(email, password):
     s = requests.Session()
     formHtml = LOGIN_FORM_HTML_REGX.search(s.get(FB_URL, headers=headers).text).group(1)
-    post_body = dict((inp[0], unescape(inp[1])) for inp in LOGIN_FORM_INPUTS_REGX.findall(formHtml))
-    post_body['email'] = email
-    post_body['pass'] = password
-    s.post(FB_URL+unescape(LOGIN_FORM_ACTION_REGX.search(formHtml).group(1)), data=post_body, headers=headers)
+    s.post(
+            FB_URL+unescape(LOGIN_FORM_ACTION_REGX.search(formHtml).group(1)),
+            data = {
+                'email': email,
+                'pass': password,
+                **dict((inp[0], unescape(inp[1])) for inp in LOGIN_FORM_INPUTS_REGX.findall(formHtml)),
+            },
+        )
     s.close()
     if not 'c_user' in s.cookies:
         if 'sfiu' in s.cookies:
-            raise IncorrectPassword()
+            raise IncorrectPassword('if you sure it is correct, then Facebook has rejected your login from this IP')
         else:
-            raise IncorrectEmail()
+            raise IncorrectEmail('if you sure it is correct, then Facebook has rejected your login from this IP')
     return dict(s.cookies)
-
 
 def get_dummy_fb_app_user_access_token(fb_cookies):
     s = requests.Session()
